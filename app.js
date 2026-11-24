@@ -15,7 +15,6 @@
   ];
 
   let tasks = load();
-  let deferredPrompt = null;
   let animTimer = null;
   let animSteps = [];
   let animIndex = 0;
@@ -450,7 +449,7 @@
   document.getElementById("btnSolve").addEventListener("click", solve);
 
   document.getElementById("btnAnimateFromPlanner").addEventListener("click", () => {
-    document.getElementById("lab").scrollIntoView({ behavior: "smooth" });
+    showPage("lab");
     playAnim();
   });
 
@@ -482,22 +481,41 @@
     e.target.reset();
   });
 
-  // ---------- PWA install ----------
-  const banner = document.getElementById("installBanner");
-  window.addEventListener("beforeinstallprompt", (e) => {
-    e.preventDefault();
-    deferredPrompt = e;
-    banner.hidden = false;
+  // ---------- Page router (бір уақытта бір бет) ----------
+  const PAGES = ["home", "features", "planner", "lab", "compare", "contact"];
+  const navEl = document.getElementById("mainNav");
+  const menuToggle = document.getElementById("menuToggle");
+
+  function showPage(name) {
+    const page = PAGES.includes(name) ? name : "home";
+    document.querySelectorAll(".page").forEach((el) => {
+      el.classList.toggle("is-active", el.dataset.page === page);
+    });
+    document.querySelectorAll("[data-nav]").forEach((el) => {
+      el.classList.toggle("active", el.getAttribute("data-nav") === page);
+    });
+    if (location.hash.replace("#", "") !== page) {
+      history.replaceState(null, "", "#" + page);
+    }
+    window.scrollTo(0, 0);
+    navEl.classList.remove("open");
+    if (page === "compare") drawGrowthChart(tasks.length || 6);
+    if (page === "lab") resetLab();
+  }
+
+  document.querySelectorAll("[data-nav]").forEach((el) => {
+    el.addEventListener("click", (e) => {
+      e.preventDefault();
+      showPage(el.getAttribute("data-nav"));
+    });
   });
-  document.getElementById("btnInstall").addEventListener("click", async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-    deferredPrompt = null;
-    banner.hidden = true;
+
+  menuToggle.addEventListener("click", () => {
+    navEl.classList.toggle("open");
   });
-  document.getElementById("btnInstallDismiss").addEventListener("click", () => {
-    banner.hidden = true;
+
+  window.addEventListener("hashchange", () => {
+    showPage(location.hash.replace("#", "") || "home");
   });
 
   if ("serviceWorker" in navigator) {
@@ -507,5 +525,5 @@
   renderList();
   solve();
   resetLab();
-  drawGrowthChart(tasks.length || 6);
+  showPage(location.hash.replace("#", "") || "home");
 })();

@@ -18,51 +18,40 @@
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-  <div id="installBanner" class="install-banner" hidden>
-    <div>
-      <strong>Zhospar қолданбасы</strong>
-      <span>Телефонға орнатып, офлайн да қолданыңыз</span>
-    </div>
-    <div class="install-actions">
-      <button type="button" class="btn btn-sm" id="btnInstall">Орнату</button>
-      <button type="button" class="btn btn-ghost btn-sm" id="btnInstallDismiss">Кейін</button>
-    </div>
-  </div>
-
   <header class="topbar">
-    <a class="logo" href="#home">
+    <a class="logo" href="#home" data-nav="home">
       <span class="mark">Z</span>
       <span class="name">Zhospar</span>
     </a>
-    <nav>
-      <a href="#home">Басты</a>
-      <a href="#features">Мүмкіндіктер</a>
-      <a href="#planner">Жоспарлаушы</a>
-      <a href="#lab">Қозғалтқыш</a>
-      <a href="#compare">Салыстыру</a>
-      <a href="#about">Компания</a>
-      <a href="#contact">Байланыс</a>
+    <button type="button" class="menu-toggle" id="menuToggle" aria-label="Мәзір">☰</button>
+    <nav id="mainNav" class="main-nav">
+      <a href="#home" data-nav="home">Басты</a>
+      <a href="#features" data-nav="features">Мүмкіндіктер</a>
+      <a href="#planner" data-nav="planner">Жоспарлаушы</a>
+      <a href="#lab" data-nav="lab">Қозғалтқыш</a>
+      <a href="#compare" data-nav="compare">Салыстыру</a>
+      <a href="#contact" data-nav="contact">Байланыс</a>
     </nav>
-    <a class="btn btn-sm" href="#planner">Жоспар ашу</a>
   </header>
 
   <main>
-    <section id="home" class="hero">
+    <!-- HOME -->
+    <section id="home" class="page hero is-active" data-page="home">
       <div class="hero-text">
-        <p class="kicker">Командалық уақыт басқару · PWA</p>
+        <p class="kicker">Командалық уақыт басқару</p>
         <h1>Zhospar</h1>
         <p class="lead">
           Күнделікті тапсырмаларды бір жерге жинап, қақтығыспайтын ең тиімді
-          кестені бір батырмамен құрыңыз. Телефонға орнатылады, офлайн жұмыс істейді.
+          кестені бір батырмамен құрыңыз.
         </p>
         <div class="actions">
-          <a class="btn" href="#planner">Кестені құру</a>
-          <a class="btn btn-ghost" href="#lab">Қозғалтқышты көру</a>
+          <a class="btn" href="#planner" data-nav="planner">Кестені құру</a>
+          <a class="btn btn-ghost" href="#lab" data-nav="lab">Қозғалтқышты көру</a>
         </div>
         <ul class="hero-badges">
-          <li>Орнатылатын қолданба</li>
           <li>Қадамдық анимация</li>
           <li>Greedy vs Brute-force</li>
+          <li>Оңтайлы кесте</li>
         </ul>
       </div>
       <div class="hero-panel" aria-hidden="true">
@@ -73,7 +62,8 @@
       </div>
     </section>
 
-    <section id="features" class="block">
+    <!-- FEATURES -->
+    <section id="features" class="page block" data-page="features">
       <div class="head">
         <h2>Мүмкіндіктер</h2>
         <p>Жоспарлауды жылдам, көрнекі және сенімді ететін құралдар.</p>
@@ -88,13 +78,17 @@
           <p>Қабаттасатын слоттарды алып тастап, ең көп орындалатын жиынтықты таңдаймыз.</p>
         </article>
         <article class="card">
-          <h3>Телефонға орнату</h3>
-          <p>PWA арқылы басты экранға қосыңыз — интернетсіз де негізгі функциялар жұмыс істейді.</p>
+          <h3>Көрнекі қозғалтқыш</h3>
+          <p>Шешім қалай шығатынын қадам-қадам анимациямен бақылаңыз.</p>
         </article>
+      </div>
+      <div class="page-actions">
+        <a class="btn" href="#planner" data-nav="planner">Жоспарлаушыға өту</a>
       </div>
     </section>
 
-    <section id="planner" class="block panel">
+    <!-- PLANNER -->
+    <section id="planner" class="page block panel" data-page="planner">
       <div class="head">
         <h2>Жоспарлаушы</h2>
         <p>Тапсырмаларды қосып, оңтайлы кестені есептеңіз.</p>
@@ -150,8 +144,8 @@
       </div>
     </section>
 
-    <!-- ENGINE LAB: step animation -->
-    <section id="lab" class="block panel lab-panel">
+    <!-- LAB -->
+    <section id="lab" class="page block panel lab-panel" data-page="lab">
       <div class="head">
         <h2>Кесте қозғалтқышы</h2>
         <p>Жүйе қалай шешім қабылдайтынын қадам-қадам көріңіз.</p>
@@ -185,7 +179,7 @@
     </section>
 
     <!-- COMPARE -->
-    <section id="compare" class="block">
+    <section id="compare" class="page block" data-page="compare">
       <div class="head">
         <h2>Салыстыру: Greedy vs Brute-force</h2>
         <p>Бірдей деректе екі тәсілді өлшеп, неге ашкөз тәсіл тиімді екенін көріңіз.</p>
@@ -225,24 +219,8 @@
       </div>
     </section>
 
-    <section id="about" class="block">
-      <div class="about">
-        <div>
-          <h2>Компания туралы</h2>
-          <p>
-            Zhospar — командалардың күн тәртібін реттейтін жоспарлау платформасы.
-            Кеңсе, қашықтан жұмыс және фриланс жобалары үшін жасалған.
-          </p>
-        </div>
-        <div class="stats">
-          <div><strong>2021</strong><span>Бастау жылы</span></div>
-          <div><strong>120+</strong><span>Команда</span></div>
-          <div><strong>98%</strong><span>Қанағаттану</span></div>
-        </div>
-      </div>
-    </section>
-
-    <section id="contact" class="block">
+    <!-- CONTACT -->
+    <section id="contact" class="page block" data-page="contact">
       <div class="contact card">
         <div>
           <h2>Байланыс</h2>
@@ -266,7 +244,7 @@
 
   <footer class="footer">
     <div class="logo"><span class="mark sm">Z</span><span class="name">Zhospar</span></div>
-    <p>© 2026 Zhospar · PWA · Офлайн қолдау</p>
+    <p>© 2026 Zhospar</p>
   </footer>
 
   <script src="app.js"></script>
