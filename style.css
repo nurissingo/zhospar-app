@@ -349,26 +349,66 @@ input:focus, textarea:focus {
 }
 .result-list { margin-top: 0.25rem; }
 
-.timeline { display: grid; gap: 0.4rem; margin-top: 0.5rem; }
+.timeline { display: grid; gap: 0.55rem; margin-top: 0.65rem; }
 .bar {
-  height: 34px; border-radius: 10px; background: var(--row-bg);
-  position: relative; overflow: hidden;
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.65rem 0.75rem;
+  border-radius: 14px;
+  background: var(--row-bg);
 }
-.bar i {
+.bar-meta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: 0;
+}
+.bar-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.bar-time {
+  flex-shrink: 0;
+  font-size: 0.78rem;
+  font-weight: 510;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.bar.is-dim .bar-title { color: var(--muted); font-weight: 500; }
+.bar.is-reject .bar-title { color: #ff453a; }
+.bar.is-current .bar-title { color: #ff9500; }
+.bar-track {
+  position: relative;
+  height: 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 8%, transparent);
+  overflow: hidden;
+}
+.bar-track i {
   position: absolute; top: 0; bottom: 0;
   background: linear-gradient(90deg, #0a84ff, #64d2ff);
-  border-radius: 10px; color: #fff; font-size: 0.72rem; font-weight: 600;
-  display: flex; align-items: center; justify-content: center; padding: 0 0.45rem;
+  border-radius: 999px;
+  min-width: 8px;
 }
-.bar i.dim { background: #d2d2d7; color: #1d1d1f; opacity: 0.85; }
-.bar i.pulse {
+.bar-track i.dim {
+  background: color-mix(in srgb, var(--ink) 22%, transparent);
+  opacity: 0.9;
+}
+.bar-track i.pulse {
   background: linear-gradient(90deg, #ff9500, #ffd60a);
   animation: pulse 0.9s ease infinite;
 }
-.bar i.reject { background: #ffb4ae; color: #1d1d1f; }
+.bar-track i.reject { background: #ff6961; }
 @keyframes pulse {
-  0%, 100% { transform: scaleY(1); }
-  50% { transform: scaleY(1.05); }
+  0%, 100% { transform: scaleY(1); opacity: 1; }
+  50% { transform: scaleY(1.35); opacity: 0.85; }
 }
 
 .lab-layout { display: grid; grid-template-columns: 0.95fr 1.05fr; gap: 0.9rem; }

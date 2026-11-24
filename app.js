@@ -219,14 +219,33 @@
       .forEach((task) => {
         const bar = document.createElement("div");
         bar.className = "bar";
+        if (!chosen.has(task.id)) bar.classList.add("is-dim");
+        if (task._state === "current") bar.classList.add("is-current");
+        if (task._state === "reject") bar.classList.add("is-reject");
+
+        const meta = document.createElement("div");
+        meta.className = "bar-meta";
+        const title = document.createElement("span");
+        title.className = "bar-title";
+        title.textContent = task.title || task.id;
+        const time = document.createElement("span");
+        time.className = "bar-time";
+        time.textContent = `${hoursToLabel(task.start)}–${hoursToLabel(task.end)}`;
+        meta.appendChild(title);
+        meta.appendChild(time);
+
+        const track = document.createElement("div");
+        track.className = "bar-track";
         const i = document.createElement("i");
         if (!chosen.has(task.id)) i.classList.add("dim");
         if (task._state === "current") i.classList.add("pulse");
         if (task._state === "reject") i.classList.add("reject");
         i.style.left = ((task.start - minT) / span) * 100 + "%";
-        i.style.width = Math.max(((task.end - task.start) / span) * 100, 10) + "%";
-        i.textContent = task.title || task.id;
-        bar.appendChild(i);
+        i.style.width = Math.max(((task.end - task.start) / span) * 100, 4) + "%";
+        track.appendChild(i);
+
+        bar.appendChild(meta);
+        bar.appendChild(track);
         container.appendChild(bar);
       });
   }
