@@ -88,7 +88,7 @@
   function applyTheme() {
     document.documentElement.classList.toggle("dark", theme === "dark");
     const meta = document.getElementById("metaTheme");
-    if (meta) meta.setAttribute("content", theme === "dark" ? "#000000" : "#f5f5f7");
+    if (meta) meta.setAttribute("content", theme === "dark" ? "#0a1220" : "#c5d8ec");
     updateThemeButtons();
   }
 
