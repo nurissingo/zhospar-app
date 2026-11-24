@@ -1,5 +1,8 @@
 (function () {
   const KEY = "zhospar_tasks_v2";
+  const LANG_KEY = "zhospar_lang";
+  const THEME_KEY = "zhospar_theme";
+
   const defaults = [
     { id: "t1", title: "Таңғы жүгіру", start: 7, end: 8 },
     { id: "t2", title: "Дәріс", start: 9, end: 11 },
@@ -23,6 +26,8 @@
     { id: "w6", title: "Жаттығу", start: 18, end: 19.5 },
   ];
 
+  let lang = localStorage.getItem(LANG_KEY) || "kk";
+  let theme = localStorage.getItem(THEME_KEY) || "light";
   let tasks = load();
   let animTimer = null;
   let animSteps = [];
@@ -39,6 +44,83 @@
   const menuToggle = document.getElementById("menuToggle");
   const menuOverlay = document.getElementById("menuOverlay");
   const navEl = document.getElementById("mainNav");
+  const langSelect = document.getElementById("langSelect");
+  const langSelectDrawer = document.getElementById("langSelectDrawer");
+  const themeToggle = document.getElementById("themeToggle");
+  const themeToggleDrawer = document.getElementById("themeToggleDrawer");
+
+  function t(key, vars) {
+    const pack = (window.ZHOSPAR_I18N && window.ZHOSPAR_I18N[lang]) || window.ZHOSPAR_I18N.kk;
+    let s = (pack && pack[key]) || key;
+    if (vars) {
+      Object.keys(vars).forEach((k) => {
+        s = s.replace(new RegExp("\\{" + k + "\\}", "g"), String(vars[k]));
+      });
+    }
+    return s;
+  }
+
+  function applyI18n() {
+    document.documentElement.lang = lang === "kk" ? "kk" : lang;
+    document.title = t("docTitle");
+    document.querySelectorAll("[data-i18n]").forEach((el) => {
+      el.textContent = t(el.getAttribute("data-i18n"));
+    });
+    document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
+      el.setAttribute("placeholder", t(el.getAttribute("data-i18n-placeholder")));
+    });
+    langSelect.value = lang;
+    langSelectDrawer.value = lang;
+    updateThemeButtons();
+    updateDateLine();
+    renderList();
+    solve();
+    if (document.querySelector('.page[data-page="how"].is-active')) resetLab();
+    if (document.querySelector('.page[data-page="why"].is-active')) drawGrowthChart(tasks.length || 6);
+  }
+
+  function setLang(next) {
+    lang = ["kk", "ru", "en"].includes(next) ? next : "kk";
+    localStorage.setItem(LANG_KEY, lang);
+    applyI18n();
+  }
+
+  function applyTheme() {
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    const meta = document.getElementById("metaTheme");
+    if (meta) meta.setAttribute("content", theme === "dark" ? "#000000" : "#f5f5f7");
+    updateThemeButtons();
+  }
+
+  function updateThemeButtons() {
+    const isDark = theme === "dark";
+    [themeToggle, themeToggleDrawer].forEach((btn) => {
+      if (!btn) return;
+      const icon = btn.querySelector(".theme-icon");
+      const text = btn.querySelector(".theme-text");
+      if (icon) icon.textContent = isDark ? "☀" : "☾";
+      if (text) text.textContent = isDark ? t("themeLight") : t("themeDark");
+      btn.setAttribute("aria-label", isDark ? t("themeLight") : t("themeDark"));
+    });
+  }
+
+  function toggleTheme() {
+    theme = theme === "dark" ? "light" : "dark";
+    localStorage.setItem(THEME_KEY, theme);
+    applyTheme();
+  }
+
+  function localeTag() {
+    return lang === "ru" ? "ru-RU" : lang === "en" ? "en-US" : "kk-KZ";
+  }
+
+  function updateDateLine() {
+    document.getElementById("todayDate").textContent = new Date().toLocaleDateString(localeTag(), {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+    });
+  }
 
   function load() {
     try {
@@ -79,24 +161,21 @@
   function sortByEnd(list) {
     return list.slice().sort((a, b) => (a.end !== b.end ? a.end - b.end : a.start - b.start));
   }
-
   function schedule(list) {
     const sorted = sortByEnd(list);
     const selected = [];
     let lastEnd = -Infinity;
-    for (const t of sorted) {
-      if (t.start >= lastEnd) {
-        selected.push(t);
-        lastEnd = t.end;
+    for (const tsk of sorted) {
+      if (tsk.start >= lastEnd) {
+        selected.push(tsk);
+        lastEnd = tsk.end;
       }
     }
     return selected;
   }
-
   function overlaps(a, b) {
     return !(a.end <= b.start || b.end <= a.start);
   }
-
   function bruteForce(list) {
     const items = list.slice(0, Math.min(list.length, 16));
     let best = [];
@@ -117,15 +196,12 @@
       }
       if (ok && subset.length > best.length) best = subset;
     }
-    return { selected: best, checked, truncated: list.length > 16 };
+    return { selected: best, checked };
   }
-
   function countConflicts(list) {
     let c = 0;
     for (let i = 0; i < list.length; i++) {
-      for (let j = i + 1; j < list.length; j++) {
-        if (overlaps(list[i], list[j])) c++;
-      }
+      for (let j = i + 1; j < list.length; j++) if (overlaps(list[i], list[j])) c++;
     }
     return c;
   }
@@ -133,26 +209,23 @@
   function drawTimeline(container, all, selectedIds) {
     container.innerHTML = "";
     if (!all.length) return;
-    const minT = Math.min(...all.map((t) => t.start));
-    const maxT = Math.max(...all.map((t) => t.end));
+    const minT = Math.min(...all.map((x) => x.start));
+    const maxT = Math.max(...all.map((x) => x.end));
     const span = Math.max(maxT - minT, 0.5);
     const chosen = selectedIds instanceof Set ? selectedIds : new Set(selectedIds);
-
     all
       .slice()
       .sort((a, b) => a.start - b.start)
-      .forEach((t) => {
+      .forEach((task) => {
         const bar = document.createElement("div");
         bar.className = "bar";
-        const left = ((t.start - minT) / span) * 100;
-        const width = ((t.end - t.start) / span) * 100;
         const i = document.createElement("i");
-        if (!chosen.has(t.id)) i.classList.add("dim");
-        if (t._state === "current") i.classList.add("pulse");
-        if (t._state === "reject") i.classList.add("reject");
-        i.style.left = left + "%";
-        i.style.width = Math.max(width, 10) + "%";
-        i.textContent = t.title || t.id;
+        if (!chosen.has(task.id)) i.classList.add("dim");
+        if (task._state === "current") i.classList.add("pulse");
+        if (task._state === "reject") i.classList.add("reject");
+        i.style.left = ((task.start - minT) / span) * 100 + "%";
+        i.style.width = Math.max(((task.end - task.start) / span) * 100, 10) + "%";
+        i.textContent = task.title || task.id;
         bar.appendChild(i);
         container.appendChild(bar);
       });
@@ -160,15 +233,15 @@
 
   function renderList() {
     taskBody.innerHTML = "";
-    tasks.forEach((t) => {
+    tasks.forEach((task) => {
       const el = document.createElement("div");
       el.className = "task-item";
       el.innerHTML = `
         <div>
-          <strong>${escapeHtml(t.title)}</strong>
-          <span>${hoursToLabel(t.start)} – ${hoursToLabel(t.end)}</span>
+          <strong>${escapeHtml(task.title)}</strong>
+          <span>${hoursToLabel(task.start)} – ${hoursToLabel(task.end)}</span>
         </div>
-        <button type="button" data-remove="${escapeHtml(t.id)}">Өшіру</button>`;
+        <button type="button" data-remove="${escapeHtml(task.id)}">${escapeHtml(t("remove"))}</button>`;
       taskBody.appendChild(el);
     });
     empty.style.display = tasks.length ? "none" : "block";
@@ -177,24 +250,24 @@
   }
 
   function renderResult(selected) {
-    resCount.textContent = selected.length + " іс";
+    resCount.textContent = t("tasksCount", { n: selected.length });
     resList.innerHTML = "";
     if (!selected.length) {
-      resList.innerHTML = '<li class="dim">Қазір сыятын іс жоқ</li>';
+      resList.innerHTML = `<li class="dim">${escapeHtml(t("noFit"))}</li>`;
       timeline.innerHTML = "";
       return;
     }
-    selected.forEach((t) => {
+    selected.forEach((task) => {
       const li = document.createElement("li");
-      li.innerHTML = `<span>${escapeHtml(t.title)}</span><b>${hoursToLabel(t.start)}–${hoursToLabel(t.end)}</b>`;
+      li.innerHTML = `<span>${escapeHtml(task.title)}</span><b>${hoursToLabel(task.start)}–${hoursToLabel(task.end)}</b>`;
       resList.appendChild(li);
     });
-    drawTimeline(timeline, tasks, new Set(selected.map((t) => t.id)));
+    drawTimeline(timeline, tasks, new Set(selected.map((x) => x.id)));
   }
 
   function solve() {
     if (!tasks.length) {
-      resCount.textContent = "0 іс";
+      resCount.textContent = t("tasksCount", { n: 0 });
       resList.innerHTML = "";
       timeline.innerHTML = "";
       updateHome();
@@ -209,7 +282,6 @@
     document.getElementById("homeTotal").textContent = String(tasks.length);
     document.getElementById("homeFit").textContent = String(selected.length);
     document.getElementById("homeConflict").textContent = String(countConflicts(tasks));
-
     const list = document.getElementById("homeSchedule");
     const emptyHome = document.getElementById("homeEmpty");
     list.innerHTML = "";
@@ -218,73 +290,79 @@
       return;
     }
     emptyHome.style.display = "none";
-    selected.forEach((t) => {
+    selected.forEach((task) => {
       const li = document.createElement("li");
-      li.innerHTML = `<span>${escapeHtml(t.title)}</span><b>${hoursToLabel(t.start)}–${hoursToLabel(t.end)}</b>`;
+      li.innerHTML = `<span>${escapeHtml(task.title)}</span><b>${hoursToLabel(task.start)}–${hoursToLabel(task.end)}</b>`;
       list.appendChild(li);
     });
   }
 
-  // Animation
   function buildAnimSteps(list) {
     const steps = [];
     if (!list.length) {
-      steps.push({ text: "Тізім бос.", sorted: [], selected: [], highlight: null, status: {} });
+      steps.push({ text: t("listEmpty"), sorted: [], selected: [], highlight: null, status: {} });
       return steps;
     }
     const sorted = sortByEnd(list);
     steps.push({
-      text: "Алдымен істерді аяқталу уақыты бойынша реттейміз — ерте бітетіні алда.",
-      sorted: sorted.map((t) => t.id),
+      text: t("stepSort"),
+      sorted: sorted.map((x) => x.id),
       selected: [],
       highlight: null,
-      status: Object.fromEntries(sorted.map((t) => [t.id, "wait"])),
+      status: Object.fromEntries(sorted.map((x) => [x.id, "wait"])),
     });
     const selected = [];
     let lastEnd = -Infinity;
-    sorted.forEach((t) => {
+    sorted.forEach((task) => {
       const status = Object.fromEntries(sorted.map((x) => [x.id, "wait"]));
       selected.forEach((s) => (status[s.id] = "pick"));
-      status[t.id] = "current";
-      if (t.start >= lastEnd) {
+      status[task.id] = "current";
+      if (task.start >= lastEnd) {
         steps.push({
-          text: `«${t.title}» (${hoursToLabel(t.start)}–${hoursToLabel(t.end)}) қақтығыспайды → күнге қосамыз.`,
+          text: t("stepPick", {
+            title: task.title,
+            start: hoursToLabel(task.start),
+            end: hoursToLabel(task.end),
+          }),
           sorted: sorted.map((x) => x.id),
-          selected: selected.map((x) => x.id).concat(t.id),
-          highlight: t.id,
-          status: { ...status, [t.id]: "pick" },
+          selected: selected.map((x) => x.id).concat(task.id),
+          highlight: task.id,
+          status: { ...status, [task.id]: "pick" },
         });
-        selected.push(t);
-        lastEnd = t.end;
+        selected.push(task);
+        lastEnd = task.end;
       } else {
         steps.push({
-          text: `«${t.title}» басқа іспен қабаттасады → өткіземіз.`,
+          text: t("stepSkip", { title: task.title }),
           sorted: sorted.map((x) => x.id),
           selected: selected.map((x) => x.id),
-          highlight: t.id,
-          status: { ...status, [t.id]: "reject" },
+          highlight: task.id,
+          status: { ...status, [task.id]: "reject" },
         });
       }
     });
     steps.push({
-      text: `Дайын: бүгінге ${selected.length} іс сыйды.`,
-      sorted: sorted.map((t) => t.id),
-      selected: selected.map((t) => t.id),
+      text: t("stepDone", { n: selected.length }),
+      sorted: sorted.map((x) => x.id),
+      selected: selected.map((x) => x.id),
       highlight: null,
       status: Object.fromEntries(
-        sorted.map((t) => [t.id, selected.some((s) => s.id === t.id) ? "pick" : "reject"])
+        sorted.map((x) => [x.id, selected.some((s) => s.id === x.id) ? "pick" : "reject"])
       ),
     });
     return steps;
   }
 
   function renderAnimFrame(step) {
-    document.getElementById("stepIndex").textContent = `Қадам ${animIndex + 1} / ${animSteps.length}`;
+    document.getElementById("stepIndex").textContent = t("stepOf", {
+      a: animIndex + 1,
+      b: animSteps.length,
+    });
     document.getElementById("stepText").textContent = step.text;
     const sortedTrack = document.getElementById("sortedTrack");
     sortedTrack.innerHTML = "";
     step.sorted.forEach((id) => {
-      const task = tasks.find((t) => t.id === id);
+      const task = tasks.find((x) => x.id === id);
       const el = document.createElement("span");
       el.className = "token " + (step.status[id] || "wait");
       if (step.highlight === id) el.classList.add("focus");
@@ -294,17 +372,17 @@
     const pickTrack = document.getElementById("pickTrack");
     pickTrack.innerHTML = "";
     if (!step.selected.length) {
-      pickTrack.innerHTML = '<span class="token">Әлі таңдалмаған</span>';
+      pickTrack.innerHTML = `<span class="token">${escapeHtml(t("noneYet"))}</span>`;
     } else {
       step.selected.forEach((id) => {
-        const task = tasks.find((t) => t.id === id);
+        const task = tasks.find((x) => x.id === id);
         const el = document.createElement("span");
         el.className = "token pick";
         el.textContent = task ? task.title : id;
         pickTrack.appendChild(el);
       });
     }
-    const decorated = tasks.map((t) => ({ ...t, _state: step.status[t.id] || "wait" }));
+    const decorated = tasks.map((x) => ({ ...x, _state: step.status[x.id] || "wait" }));
     drawTimeline(document.getElementById("labTimeline"), decorated, new Set(step.selected));
   }
 
@@ -345,7 +423,7 @@
 
   function runCompare() {
     if (!tasks.length) {
-      document.getElementById("verdictText").textContent = "Алдымен іс қосыңыз.";
+      document.getElementById("verdictText").textContent = t("addTasksFirst");
       return;
     }
     const t0 = performance.now();
@@ -355,13 +433,12 @@
     const t2 = performance.now();
     document.getElementById("gCount").textContent = String(g.length);
     document.getElementById("gIds").textContent = g.map((x) => x.title).join(", ") || "—";
-    document.getElementById("gTime").textContent = (t1 - t0).toFixed(3) + " мс";
+    document.getElementById("gTime").textContent = (t1 - t0).toFixed(3) + " " + t("ms");
     document.getElementById("bCount").textContent = String(b.selected.length);
     document.getElementById("bIds").textContent = b.selected.map((x) => x.title).join(", ") || "—";
-    document.getElementById("bTime").textContent = (t2 - t1).toFixed(3) + " мс";
-    document.getElementById("bChecked").textContent = b.checked.toLocaleString("kk-KZ");
-    document.getElementById("verdictText").textContent =
-      `Екеуі де ${g.length} іс тапты. Ақылды тәсіл әлдеқайда жылдам — күнделікті қолдануға ыңғайлы.`;
+    document.getElementById("bTime").textContent = (t2 - t1).toFixed(3) + " " + t("ms");
+    document.getElementById("bChecked").textContent = b.checked.toLocaleString(localeTag());
+    document.getElementById("verdictText").textContent = t("verdict", { n: g.length });
     drawGrowthChart(tasks.length);
   }
 
@@ -396,12 +473,10 @@
     });
     const legend = document.createElement("p");
     legend.className = "chart-legend";
-    legend.innerHTML =
-      "<span class='lg'></span> Ақылды тәсіл &nbsp; <span class='lb'></span> Барлығын тексеру";
+    legend.innerHTML = `<span class="lg"></span> ${escapeHtml(t("legendSmart"))} &nbsp; <span class="lb"></span> ${escapeHtml(t("legendBrute"))}`;
     chart.appendChild(legend);
   }
 
-  // Menu
   function openMenu() {
     document.body.classList.add("menu-open");
     navEl.classList.add("open");
@@ -421,7 +496,6 @@
     else openMenu();
   }
 
-  // Router
   const PAGES = ["today", "day", "how", "why", "help"];
   function showPage(name) {
     const page = PAGES.includes(name) ? name : "today";
@@ -438,19 +512,18 @@
     if (page === "how") resetLab();
   }
 
-  // Events
   document.getElementById("taskForm").addEventListener("submit", (e) => {
     e.preventDefault();
     const title = document.getElementById("taskTitle").value.trim();
     const start = timeToHours(document.getElementById("taskStart").value);
     const end = timeToHours(document.getElementById("taskEnd").value);
-    if (!title) return showMsg(formMsg, "Атауын жазыңыз", false);
-    if (!(end > start)) return showMsg(formMsg, "Аяқталу басталудан кейін болуы керек", false);
+    if (!title) return showMsg(formMsg, t("needTitle"), false);
+    if (!(end > start)) return showMsg(formMsg, t("needTime"), false);
     tasks.push({ id: "t" + ++idSeq, title, start, end });
     e.target.reset();
     document.getElementById("taskStart").value = "09:00";
     document.getElementById("taskEnd").value = "10:30";
-    showMsg(formMsg, "Қосылды", true);
+    showMsg(formMsg, t("added"), true);
     renderList();
     solve();
   });
@@ -458,7 +531,7 @@
   taskBody.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-remove]");
     if (!btn) return;
-    tasks = tasks.filter((t) => t.id !== btn.getAttribute("data-remove"));
+    tasks = tasks.filter((x) => x.id !== btn.getAttribute("data-remove"));
     renderList();
     solve();
   });
@@ -478,17 +551,15 @@
     showPage("day");
     solve();
   });
-
   document.querySelectorAll("[data-preset]").forEach((btn) => {
     btn.addEventListener("click", () => {
       const kind = btn.getAttribute("data-preset");
       tasks = (kind === "work" ? workDay : studentDay).map((x) => ({ ...x }));
       renderList();
       solve();
-      showMsg(formMsg, "Мысал жүктелді", true);
+      showMsg(formMsg, t("loaded"), true);
     });
   });
-
   document.getElementById("btnPlay").addEventListener("click", playAnim);
   document.getElementById("btnPause").addEventListener("click", stopAnim);
   document.getElementById("btnStep").addEventListener("click", () => {
@@ -498,15 +569,18 @@
   });
   document.getElementById("btnResetLab").addEventListener("click", resetLab);
   document.getElementById("btnCompare").addEventListener("click", runCompare);
-
   document.getElementById("contactForm").addEventListener("submit", (e) => {
     e.preventDefault();
-    showMsg(document.getElementById("contactMsg"), "Жіберілді. Жақында жауап береміз.", true);
+    showMsg(document.getElementById("contactMsg"), t("sent"), true);
     e.target.reset();
   });
 
   menuToggle.addEventListener("click", toggleMenu);
   menuOverlay.addEventListener("click", closeMenu);
+  themeToggle.addEventListener("click", toggleTheme);
+  themeToggleDrawer.addEventListener("click", toggleTheme);
+  langSelect.addEventListener("change", () => setLang(langSelect.value));
+  langSelectDrawer.addEventListener("change", () => setLang(langSelectDrawer.value));
 
   document.querySelectorAll("[data-nav]").forEach((el) => {
     el.addEventListener("click", (e) => {
@@ -518,18 +592,11 @@
     showPage(location.hash.replace("#", "") || "today");
   });
 
-  const dateEl = document.getElementById("todayDate");
-  dateEl.textContent = new Date().toLocaleDateString("kk-KZ", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
-
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./sw.js").catch(() => {});
   }
 
-  renderList();
-  solve();
+  applyTheme();
+  applyI18n();
   showPage(location.hash.replace("#", "") || "today");
 })();

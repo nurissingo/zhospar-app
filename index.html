@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-  <meta name="theme-color" content="#f5f5f7" />
-  <meta name="description" content="Zhospar — күнделікті істеріңізді қақтығыссыз жоспарлаңыз" />
+  <meta name="theme-color" content="#f5f5f7" id="metaTheme" />
+  <meta name="description" content="Zhospar — daily planner" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Zhospar" />
@@ -12,20 +12,41 @@
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png" />
   <link rel="icon" type="image/png" href="icons/icon-192.png" />
   <link rel="icon" type="image/svg+xml" href="logo.svg" />
-  <title>Zhospar — Менің күнім</title>
+  <title>Zhospar</title>
   <link rel="stylesheet" href="style.css" />
+  <script>
+    (function () {
+      try {
+        if (localStorage.getItem("zhospar_theme") === "dark") {
+          document.documentElement.classList.add("dark");
+        }
+      } catch (e) {}
+    })();
+  </script>
 </head>
 <body>
   <div class="menu-overlay" id="menuOverlay" hidden></div>
 
-  <!-- Мәзір header-дан тыс: blur ішінде fixed жұмыс істемейді -->
-  <nav id="mainNav" class="main-nav glass" aria-label="Негізгі мәзір">
-    <p class="nav-label">Мәзір</p>
-    <a href="#today" data-nav="today">Бүгін</a>
-    <a href="#day" data-nav="day">Менің күнім</a>
-    <a href="#how" data-nav="how">Қалай таңдаймыз</a>
-    <a href="#why" data-nav="why">Неге жылдам</a>
-    <a href="#help" data-nav="help">Көмек</a>
+  <nav id="mainNav" class="main-nav glass" aria-label="Menu">
+    <p class="nav-label" data-i18n="menu">Мәзір</p>
+    <a href="#today" data-nav="today" data-i18n="navToday">Бүгін</a>
+    <a href="#day" data-nav="day" data-i18n="navDay">Менің күнім</a>
+    <a href="#how" data-nav="how" data-i18n="navHow">Қалай таңдаймыз</a>
+    <a href="#why" data-nav="why" data-i18n="navWhy">Неге жылдам</a>
+    <a href="#help" data-nav="help" data-i18n="navHelp">Көмек</a>
+    <div class="drawer-controls">
+      <label class="ctrl-label"><span data-i18n="lang">Тіл</span>
+        <select id="langSelectDrawer" class="lang-select" aria-label="Language">
+          <option value="kk">ҚАЗ</option>
+          <option value="ru">РУС</option>
+          <option value="en">ENG</option>
+        </select>
+      </label>
+      <button type="button" class="theme-btn" id="themeToggleDrawer" aria-label="Theme">
+        <span class="theme-icon" aria-hidden="true">☾</span>
+        <span class="theme-text" data-i18n="themeDark">Түнгі</span>
+      </button>
+    </div>
   </nav>
 
   <header class="topbar glass">
@@ -33,132 +54,142 @@
       <img class="logo-img" src="logo.svg" width="34" height="34" alt="Zhospar" />
       <span class="name">Zhospar</span>
     </a>
-    <nav class="nav-desktop" aria-label="Мәзір">
-      <a href="#today" data-nav="today">Бүгін</a>
-      <a href="#day" data-nav="day">Менің күнім</a>
-      <a href="#how" data-nav="how">Қалай таңдаймыз</a>
-      <a href="#why" data-nav="why">Неге жылдам</a>
-      <a href="#help" data-nav="help">Көмек</a>
+    <nav class="nav-desktop" aria-label="Menu">
+      <a href="#today" data-nav="today" data-i18n="navToday">Бүгін</a>
+      <a href="#day" data-nav="day" data-i18n="navDay">Менің күнім</a>
+      <a href="#how" data-nav="how" data-i18n="navHow">Қалай таңдаймыз</a>
+      <a href="#why" data-nav="why" data-i18n="navWhy">Неге жылдам</a>
+      <a href="#help" data-nav="help" data-i18n="navHelp">Көмек</a>
     </nav>
-    <button type="button" class="menu-toggle glass" id="menuToggle" aria-label="Мәзір" aria-expanded="false">
-      <span></span><span></span><span></span>
-    </button>
+    <div class="header-actions">
+      <select id="langSelect" class="lang-select" aria-label="Language">
+        <option value="kk">ҚАЗ</option>
+        <option value="ru">РУС</option>
+        <option value="en">ENG</option>
+      </select>
+      <button type="button" class="theme-btn icon-only" id="themeToggle" aria-label="Theme">
+        <span class="theme-icon" aria-hidden="true">☾</span>
+      </button>
+      <button type="button" class="menu-toggle" id="menuToggle" aria-label="Menu" aria-expanded="false">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
   </header>
 
   <main>
-    <!-- TODAY -->
     <section id="today" class="page is-active" data-page="today">
       <div class="page-inner">
         <p class="date-line" id="todayDate"></p>
-        <h1 class="page-title">Сәлем 👋<br />Бүгінгі күніңді жинақылайық</h1>
-        <p class="page-lead">Бір уақытта бірнеше іс қабаттаспасын. Zhospar ең маңыздыларын автоматты реттейді.</p>
+        <h1 class="page-title">
+          <span data-i18n="hello">Сәлем 👋</span><br />
+          <span data-i18n="todayTitle">Бүгінгі күніңді жинақылайық</span>
+        </h1>
+        <p class="page-lead" data-i18n="todayLead">Бір уақытта бірнеше іс қабаттаспасын. Zhospar ең маңыздыларын автоматты реттейді.</p>
 
         <div class="stat-row">
           <div class="glass-card stat">
-            <span>Жоспардағы істер</span>
+            <span data-i18n="statTotal">Жоспардағы істер</span>
             <strong id="homeTotal">0</strong>
           </div>
           <div class="glass-card stat">
-            <span>Сыйатын істер</span>
+            <span data-i18n="statFit">Сыйатын істер</span>
             <strong id="homeFit">0</strong>
           </div>
           <div class="glass-card stat">
-            <span>Қақтығыс</span>
+            <span data-i18n="statConflict">Қақтығыс</span>
             <strong id="homeConflict">0</strong>
           </div>
         </div>
 
         <div class="glass-card preview-card">
           <div class="preview-head">
-            <h2>Бүгінгі ұсынылған кесте</h2>
-            <a href="#day" data-nav="day" class="linkish">Өңдеу →</a>
+            <h2 data-i18n="scheduleTitle">Бүгінгі ұсынылған кесте</h2>
+            <a href="#day" data-nav="day" class="linkish" data-i18n="edit">Өңдеу →</a>
           </div>
           <ul id="homeSchedule" class="day-list"></ul>
-          <p id="homeEmpty" class="empty-soft">Әзірге іс жоқ. «Менің күнім» бөлімінен қосыңыз.</p>
+          <p id="homeEmpty" class="empty-soft" data-i18n="homeEmpty">Әзірге іс жоқ. «Менің күнім» бөлімінен қосыңыз.</p>
         </div>
 
         <div class="cta-row">
-          <a class="btn" href="#day" data-nav="day">Іс қосу</a>
-          <a class="btn btn-glass" href="#day" data-nav="day" id="quickOptimize">Күнімді оңтайла</a>
+          <a class="btn" href="#day" data-nav="day" data-i18n="addTask">Іс қосу</a>
+          <a class="btn btn-glass" href="#day" data-nav="day" id="quickOptimize" data-i18n="optimizeDay">Күнімді оңтайла</a>
         </div>
       </div>
     </section>
 
-    <!-- MY DAY -->
     <section id="day" class="page" data-page="day">
       <div class="page-inner">
-        <h1 class="page-title">Менің күнім</h1>
-        <p class="page-lead">Жаттығу, сабақ, жұмыс, кездесу — бәрін енгізіңіз. Қабаттасатындарды жүйе өзі сүзеді.</p>
+        <h1 class="page-title" data-i18n="dayTitle">Менің күнім</h1>
+        <p class="page-lead" data-i18n="dayLead">Жаттығу, сабақ, жұмыс, кездесу — бәрін енгізіңіз. Қабаттасатындарды жүйе өзі сүзеді.</p>
 
         <div class="day-grid">
           <form id="taskForm" class="glass-card form-card">
-            <h2>Жаңа іс</h2>
-            <label>Не істейсіз?
-              <input id="taskTitle" type="text" maxlength="40" placeholder="мыс. Жаттығу / Дәріс / Кездесу" required />
+            <h2 data-i18n="newTask">Жаңа іс</h2>
+            <label><span data-i18n="whatDoing">Не істейсіз?</span>
+              <input id="taskTitle" type="text" maxlength="40" data-i18n-placeholder="titlePh" placeholder="мыс. Жаттығу / Дәріс / Кездесу" required />
             </label>
             <div class="time-row">
-              <label>Басталу
+              <label><span data-i18n="start">Басталу</span>
                 <input id="taskStart" type="time" value="09:00" required />
               </label>
-              <label>Аяқталу
+              <label><span data-i18n="end">Аяқталу</span>
                 <input id="taskEnd" type="time" value="10:30" required />
               </label>
             </div>
-            <button class="btn full" type="submit">Күнге қосу</button>
+            <button class="btn full" type="submit" data-i18n="addToDay">Күнге қосу</button>
             <p id="formMsg" class="msg" hidden></p>
             <div class="preset-row">
-              <button type="button" class="chip-btn" data-preset="student">Студент күні</button>
-              <button type="button" class="chip-btn" data-preset="work">Жұмыс күні</button>
+              <button type="button" class="chip-btn" data-preset="student" data-i18n="presetStudent">Студент күні</button>
+              <button type="button" class="chip-btn" data-preset="work" data-i18n="presetWork">Жұмыс күні</button>
             </div>
           </form>
 
           <div class="glass-card list-card">
             <div class="toolbar">
-              <h2>Бүгінгі тізім</h2>
-              <button type="button" class="btn btn-glass btn-sm" id="btnClear">Тазалау</button>
+              <h2 data-i18n="todayList">Бүгінгі тізім</h2>
+              <button type="button" class="btn btn-glass btn-sm" id="btnClear" data-i18n="clear">Тазалау</button>
             </div>
             <div id="taskBody" class="task-cards"></div>
-            <p id="emptyState" class="empty-soft">Әзірге іс жоқ.</p>
-            <button class="btn full" type="button" id="btnSolve">Күнімді оңтайла</button>
-            <button class="btn btn-glass full" type="button" id="btnAnimateFromPlanner">Қалай таңдалғанын көру</button>
+            <p id="emptyState" class="empty-soft" data-i18n="emptyList">Әзірге іс жоқ.</p>
+            <button class="btn full" type="button" id="btnSolve" data-i18n="optimizeDay">Күнімді оңтайла</button>
+            <button class="btn btn-glass full" type="button" id="btnAnimateFromPlanner" data-i18n="seeHow">Қалай таңдалғанын көру</button>
           </div>
 
           <div class="glass-card result-card">
-            <p class="muted">Сізге ұсынылған күн тәртібі</p>
-            <p class="huge" id="resCount">0 іс</p>
+            <p class="muted" data-i18n="suggested">Сізге ұсынылған күн тәртібі</p>
+            <p class="huge" id="resCount">0</p>
             <ul id="resList" class="day-list result-list"></ul>
-            <div id="timeline" class="timeline" aria-label="Күн сызығы"></div>
+            <div id="timeline" class="timeline" aria-label="timeline"></div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- HOW -->
     <section id="how" class="page" data-page="how">
       <div class="page-inner">
-        <h1 class="page-title">Қалай таңдаймыз?</h1>
-        <p class="page-lead">Қарапайым тілмен: ең ерте бітетін істі аламыз — содан кейін оған тимейтін келесісін.</p>
+        <h1 class="page-title" data-i18n="howTitle">Қалай таңдаймыз?</h1>
+        <p class="page-lead" data-i18n="howLead">Қарапайым тілмен: ең ерте бітетін істі аламыз — содан кейін оған тимейтін келесісін.</p>
 
         <div class="lab-layout">
           <div class="glass-card lab-controls">
             <div class="lab-btns">
-              <button type="button" class="btn" id="btnPlay">▶ Көрсету</button>
+              <button type="button" class="btn" id="btnPlay" data-i18n="play">▶ Көрсету</button>
               <button type="button" class="btn btn-glass" id="btnPause">⏸</button>
-              <button type="button" class="btn btn-glass" id="btnStep">Келесі</button>
-              <button type="button" class="btn btn-glass" id="btnResetLab">Басынан</button>
+              <button type="button" class="btn btn-glass" id="btnStep" data-i18n="next">Келесі</button>
+              <button type="button" class="btn btn-glass" id="btnResetLab" data-i18n="reset">Басынан</button>
             </div>
-            <label class="speed-label">Жылдамдық
+            <label class="speed-label"><span data-i18n="speed">Жылдамдық</span>
               <input type="range" id="animSpeed" min="400" max="2200" step="100" value="1100" />
             </label>
             <div class="step-meta">
-              <span id="stepIndex">Қадам 0 / 0</span>
-              <p id="stepText" class="step-text">«Көрсету» батырмасын басыңыз.</p>
+              <span id="stepIndex">0 / 0</span>
+              <p id="stepText" class="step-text" data-i18n="pressPlay">«Көрсету» батырмасын басыңыз.</p>
             </div>
           </div>
           <div class="glass-card lab-stage">
-            <p class="muted">Реттелген істер</p>
+            <p class="muted" data-i18n="sorted">Реттелген істер</p>
             <div id="sortedTrack" class="sorted-track"></div>
-            <p class="muted">Таңдалды</p>
+            <p class="muted" data-i18n="picked">Таңдалды</p>
             <div id="pickTrack" class="pick-track"></div>
             <div id="labTimeline" class="timeline lab-timeline"></div>
           </div>
@@ -166,66 +197,64 @@
       </div>
     </section>
 
-    <!-- WHY -->
     <section id="why" class="page" data-page="why">
       <div class="page-inner">
-        <h1 class="page-title">Неге жылдам?</h1>
-        <p class="page-lead">Барлық нұсқаны тексеру ұзақ. Ақылды тәсіл бірден дұрыс кестені табады.</p>
+        <h1 class="page-title" data-i18n="whyTitle">Неге жылдам?</h1>
+        <p class="page-lead" data-i18n="whyLead">Барлық нұсқаны тексеру ұзақ. Ақылды тәсіл бірден дұрыс кестені табады.</p>
 
         <div class="compare-grid">
           <article class="glass-card compare-card">
-            <h3>Ақылды жоспарлау</h3>
-            <p class="big-o">Жылдам</p>
+            <h3 data-i18n="smart">Ақылды жоспарлау</h3>
+            <p class="big-o" data-i18n="fast">Жылдам</p>
             <ul class="metric-list">
-              <li>Істер саны: <strong id="gCount">—</strong></li>
-              <li>Таңдалған: <strong id="gIds">—</strong></li>
-              <li>Уақыт: <strong id="gTime">—</strong></li>
+              <li><span data-i18n="count">Істер саны:</span> <strong id="gCount">—</strong></li>
+              <li><span data-i18n="selected">Таңдалған:</span> <strong id="gIds">—</strong></li>
+              <li><span data-i18n="time">Уақыт:</span> <strong id="gTime">—</strong></li>
             </ul>
           </article>
           <article class="glass-card compare-card">
-            <h3>Барлығын тексеру</h3>
-            <p class="big-o warn">Баяу</p>
+            <h3 data-i18n="brute">Барлығын тексеру</h3>
+            <p class="big-o warn" data-i18n="slow">Баяу</p>
             <ul class="metric-list">
-              <li>Істер саны: <strong id="bCount">—</strong></li>
-              <li>Таңдалған: <strong id="bIds">—</strong></li>
-              <li>Уақыт: <strong id="bTime">—</strong></li>
-              <li>Тексерілді: <strong id="bChecked">—</strong></li>
+              <li><span data-i18n="count">Істер саны:</span> <strong id="bCount">—</strong></li>
+              <li><span data-i18n="selected">Таңдалған:</span> <strong id="bIds">—</strong></li>
+              <li><span data-i18n="time">Уақыт:</span> <strong id="bTime">—</strong></li>
+              <li><span data-i18n="checked">Тексерілді:</span> <strong id="bChecked">—</strong></li>
             </ul>
           </article>
           <article class="glass-card compare-card verdict">
-            <h3>Нәтиже</h3>
-            <p id="verdictText">Салыстыруды іске қосыңыз.</p>
-            <button type="button" class="btn full" id="btnCompare">Салыстыру</button>
+            <h3 data-i18n="result">Нәтиже</h3>
+            <p id="verdictText" data-i18n="runCompare">Салыстыруды іске қосыңыз.</p>
+            <button type="button" class="btn full" id="btnCompare" data-i18n="compareBtn">Салыстыру</button>
           </article>
         </div>
         <div class="glass-card chart-card">
-          <p class="muted">Іс саны өскенде уақыт қалай өседі</p>
+          <p class="muted" data-i18n="growth">Іс саны өскенде уақыт қалай өседі</p>
           <div id="growthChart" class="growth-chart"></div>
         </div>
       </div>
     </section>
 
-    <!-- HELP -->
     <section id="help" class="page" data-page="help">
       <div class="page-inner narrow">
-        <h1 class="page-title">Көмек</h1>
+        <h1 class="page-title" data-i18n="helpTitle">Көмек</h1>
         <div class="glass-card help-card">
-          <h2>Қалай қолданамын?</h2>
+          <h2 data-i18n="howUse">Қалай қолданамын?</h2>
           <ol>
-            <li>«Менің күнім» бөліміне өтіңіз.</li>
-            <li>Істің атауы мен уақытын жазыңыз.</li>
-            <li>«Күнімді оңтайла» батырмасын басыңыз.</li>
-            <li>Қабаттаспайтын ең ыңғайлы кестені алыңыз.</li>
+            <li data-i18n="help1">«Менің күнім» бөліміне өтіңіз.</li>
+            <li data-i18n="help2">Істің атауы мен уақытын жазыңыз.</li>
+            <li data-i18n="help3">«Күнімді оңтайла» батырмасын басыңыз.</li>
+            <li data-i18n="help4">Қабаттаспайтын ең ыңғайлы кестені алыңыз.</li>
           </ol>
         </div>
         <div class="glass-card help-card">
-          <h2>Байланыс</h2>
-          <p>Сұрақ болса жазыңыз — жауап береміз.</p>
+          <h2 data-i18n="contact">Байланыс</h2>
+          <p data-i18n="contactLead">Сұрақ болса жазыңыз — жауап береміз.</p>
           <form id="contactForm" class="contact-form">
-            <label>Атыңыз<input type="text" required placeholder="Аты-жөні" /></label>
-            <label>Телефон / Email<input type="text" required placeholder="+7 ... немесе email" /></label>
-            <label>Хабарлама<textarea rows="3" placeholder="Қысқаша сұраныс"></textarea></label>
-            <button class="btn" type="submit">Жіберу</button>
+            <label><span data-i18n="yourName">Атыңыз</span><input type="text" required data-i18n-placeholder="namePh" placeholder="Аты-жөні" /></label>
+            <label><span data-i18n="phoneEmail">Телефон / Email</span><input type="text" required data-i18n-placeholder="phonePh" placeholder="+7 ... немесе email" /></label>
+            <label><span data-i18n="message">Хабарлама</span><textarea rows="3" data-i18n-placeholder="messagePh" placeholder="Қысқаша сұраныс"></textarea></label>
+            <button class="btn" type="submit" data-i18n="send">Жіберу</button>
             <p id="contactMsg" class="msg" hidden></p>
           </form>
         </div>
@@ -235,9 +264,10 @@
 
   <footer class="footer glass">
     <span class="logo"><img class="logo-img" src="logo.svg" width="22" height="22" alt="" /> Zhospar</span>
-    <span>Күнделікті жоспар · © 2026</span>
+    <span data-i18n="footer">Күнделікті жоспар · © 2026</span>
   </footer>
 
+  <script src="i18n.js"></script>
   <script src="app.js"></script>
 </body>
 </html>

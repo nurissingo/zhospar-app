@@ -1,9 +1,10 @@
-const CACHE = "zhospar-v7";
+const CACHE = "zhospar-v8";
 const ASSETS = [
   "./",
   "./index.html",
   "./style.css",
   "./app.js",
+  "./i18n.js",
   "./manifest.json",
   "./logo.svg",
   "./icons/icon-192.png",
