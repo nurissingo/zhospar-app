@@ -37,7 +37,6 @@
   const resList = document.getElementById("resList");
   const timeline = document.getElementById("timeline");
   const menuToggle = document.getElementById("menuToggle");
-  const menuClose = document.getElementById("menuClose");
   const menuOverlay = document.getElementById("menuOverlay");
   const navEl = document.getElementById("mainNav");
 
@@ -507,10 +506,6 @@
   });
 
   menuToggle.addEventListener("click", toggleMenu);
-  menuClose.addEventListener("click", (e) => {
-    e.preventDefault();
-    closeMenu();
-  });
   menuOverlay.addEventListener("click", closeMenu);
 
   document.querySelectorAll("[data-nav]").forEach((el) => {
