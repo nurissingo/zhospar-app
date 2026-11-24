@@ -78,6 +78,51 @@ html.dark body {
     linear-gradient(165deg, #060b14 0%, #0d1628 45%, #0a1220 100%);
 }
 body.menu-open { overflow: hidden; }
+html, body { overscroll-behavior-y: contain; }
+
+.ptr {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 200;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem;
+  height: 0;
+  overflow: hidden;
+  pointer-events: none;
+  color: var(--ink);
+  transition: height 0.15s ease;
+}
+.ptr.visible { height: var(--ptr-h, 64px); }
+.ptr.refreshing { height: 72px; }
+.ptr-spinner {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 2px solid color-mix(in srgb, var(--ink) 18%, transparent);
+  border-top-color: var(--blue);
+  opacity: 0.85;
+  transform: rotate(0deg);
+}
+.ptr.pulling .ptr-spinner {
+  transform: rotate(calc(var(--ptr-p, 0) * 2.4deg));
+}
+.ptr.refreshing .ptr-spinner {
+  animation: ptrSpin 0.7s linear infinite;
+}
+.ptr-text {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--muted);
+}
+@keyframes ptrSpin {
+  to { transform: rotate(360deg); }
+}
 
 .bg-orbs {
   position: fixed;

@@ -884,8 +884,118 @@
     showPage(location.hash.replace("#", "") || "today");
   });
 
+  const ptr = document.getElementById("ptr");
+  const ptrText = ptr ? ptr.querySelector(".ptr-text") : null;
+  let ptrStartY = 0;
+  let ptrDelta = 0;
+  let ptrActive = false;
+  let ptrRefreshing = false;
+  const PTR_MAX = 96;
+  const PTR_TRIGGER = 72;
+
+  function atPageTop() {
+    return (window.scrollY || document.documentElement.scrollTop || 0) <= 2;
+  }
+
+  function setPtrPull(delta) {
+    if (!ptr) return;
+    const p = Math.max(0, Math.min(delta, PTR_MAX));
+    ptrDelta = p;
+    ptr.style.setProperty("--ptr-h", p + "px");
+    ptr.style.setProperty("--ptr-p", String(p));
+    ptr.classList.toggle("visible", p > 8);
+    ptr.classList.toggle("pulling", p > 8 && !ptrRefreshing);
+    if (ptrText && !ptrRefreshing) {
+      ptrText.textContent = p >= PTR_TRIGGER ? t("releaseRefresh") : t("pullRefresh");
+    }
+  }
+
+  async function hardRefresh() {
+    if (ptrRefreshing) return;
+    ptrRefreshing = true;
+    if (ptr) {
+      ptr.classList.add("visible", "refreshing");
+      ptr.classList.remove("pulling");
+      ptr.style.setProperty("--ptr-h", "72px");
+    }
+    if (ptrText) ptrText.textContent = t("refreshing");
+    try {
+      if (navigator.serviceWorker && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({ type: "CLEAR_CACHE" });
+      }
+      if ("caches" in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+      if ("serviceWorker" in navigator) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister()));
+      }
+    } catch (_) {}
+    const url = new URL(location.href);
+    url.searchParams.set("_r", String(Date.now()));
+    location.replace(url.toString());
+  }
+
+  document.addEventListener(
+    "touchstart",
+    (e) => {
+      if (ptrRefreshing || document.body.classList.contains("menu-open")) return;
+      if (!atPageTop() || e.touches.length !== 1) return;
+      ptrActive = true;
+      ptrStartY = e.touches[0].clientY;
+      ptrDelta = 0;
+    },
+    { passive: true }
+  );
+
+  document.addEventListener(
+    "touchmove",
+    (e) => {
+      if (!ptrActive || ptrRefreshing) return;
+      if (!atPageTop()) {
+        ptrActive = false;
+        setPtrPull(0);
+        return;
+      }
+      const dy = e.touches[0].clientY - ptrStartY;
+      if (dy <= 0) {
+        setPtrPull(0);
+        return;
+      }
+      const damped = Math.min(PTR_MAX, dy * 0.55);
+      setPtrPull(damped);
+      if (damped > 12 && e.cancelable) e.preventDefault();
+    },
+    { passive: false }
+  );
+
+  document.addEventListener(
+    "touchend",
+    () => {
+      if (!ptrActive) return;
+      ptrActive = false;
+      if (ptrDelta >= PTR_TRIGGER) hardRefresh();
+      else setPtrPull(0);
+    },
+    { passive: true }
+  );
+
+  document.addEventListener(
+    "touchcancel",
+    () => {
+      ptrActive = false;
+      if (!ptrRefreshing) setPtrPull(0);
+    },
+    { passive: true }
+  );
+
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./sw.js").catch(() => {});
+  }
+
+  if (location.search.indexOf("_r=") !== -1) {
+    history.replaceState(null, "", location.pathname + location.hash);
   }
 
   applyTheme();

@@ -126,6 +126,9 @@ window.ZHOSPAR_I18N = {
     stepDone: "Дайын: бүгінге {n} іс сыйды.",
     listEmpty: "Тізім бос.",
     ms: "мс",
+    refreshing: "Жаңартылуда…",
+    releaseRefresh: "Жіберіңіз — жаңару",
+    pullRefresh: "Жаңарту үшін тартыңыз",
   },
   ru: {
     docTitle: "Zhospar — Мой день",
@@ -254,6 +257,9 @@ window.ZHOSPAR_I18N = {
     stepDone: "Готово: в день помещается {n} дел.",
     listEmpty: "Список пуст.",
     ms: "мс",
+    refreshing: "Обновление…",
+    releaseRefresh: "Отпустите — обновить",
+    pullRefresh: "Потяните, чтобы обновить",
   },
   en: {
     docTitle: "Zhospar — My Day",
@@ -382,5 +388,8 @@ window.ZHOSPAR_I18N = {
     stepDone: "Done: {n} tasks fit today.",
     listEmpty: "List is empty.",
     ms: "ms",
+    refreshing: "Refreshing…",
+    releaseRefresh: "Release to refresh",
+    pullRefresh: "Pull to refresh",
   },
 };
