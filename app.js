@@ -93,9 +93,13 @@
   }
 
   function applyTheme() {
-    document.documentElement.classList.toggle("dark", theme === "dark");
+    const isDark = theme === "dark";
+    const color = isDark ? "#0a1220" : "#c5d8ec";
+    document.documentElement.classList.toggle("dark", isDark);
+    document.documentElement.style.backgroundColor = color;
+    document.body.style.backgroundColor = color;
     const meta = document.getElementById("metaTheme");
-    if (meta) meta.setAttribute("content", theme === "dark" ? "#0a1220" : "#c5d8ec");
+    if (meta) meta.setAttribute("content", color);
     updateThemeButtons();
   }
 

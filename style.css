@@ -52,33 +52,52 @@ html.dark {
 }
 
 * { box-sizing: border-box; }
-html, body { margin: 0; min-height: 100%; }
+html {
+  margin: 0;
+  min-height: 100%;
+  min-height: 100dvh;
+  background-color: #c5d8ec;
+  overscroll-behavior-y: none;
+}
+html.dark {
+  background-color: #0a1220;
+}
 body {
   position: relative;
   isolation: isolate;
+  margin: 0;
+  min-height: 100%;
+  min-height: 100dvh;
   font-family: var(--font);
   color: var(--ink);
-  background:
+  background-color: #c5d8ec;
+  background-image:
     radial-gradient(ellipse 90% 55% at 85% -5%, var(--glow-a), transparent 55%),
     radial-gradient(ellipse 70% 50% at -5% 75%, var(--glow-b), transparent 50%),
     radial-gradient(ellipse 55% 40% at 50% 40%, var(--glow-c), transparent 60%),
     linear-gradient(165deg, #c5d8ec 0%, #dce8f5 35%, #b8cfe6 70%, #a8c4e0 100%);
+  background-attachment: fixed;
   line-height: 1.47059;
   letter-spacing: -0.022em;
   -webkit-font-smoothing: antialiased;
   overflow-x: hidden;
   color-scheme: light;
+  overscroll-behavior-y: none;
+  padding-top: env(safe-area-inset-top);
+  padding-bottom: env(safe-area-inset-bottom);
+  padding-left: env(safe-area-inset-left);
+  padding-right: env(safe-area-inset-right);
 }
 html.dark body {
   color-scheme: dark;
-  background:
+  background-color: #0a1220;
+  background-image:
     radial-gradient(ellipse 90% 55% at 90% -8%, var(--glow-a), transparent 55%),
     radial-gradient(ellipse 70% 50% at -10% 80%, var(--glow-b), transparent 50%),
     radial-gradient(ellipse 50% 40% at 45% 45%, var(--glow-c), transparent 65%),
     linear-gradient(165deg, #060b14 0%, #0d1628 45%, #0a1220 100%);
 }
 body.menu-open { overflow: hidden; }
-html, body { overscroll-behavior-y: contain; }
 
 .ptr {
   position: fixed;
