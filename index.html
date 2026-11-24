@@ -36,6 +36,8 @@
     <p class="nav-label" data-i18n="menu">Мәзір</p>
     <a href="#today" data-nav="today" data-i18n="navToday">Бүгін</a>
     <a href="#day" data-nav="day" data-i18n="navDay">Менің күнім</a>
+    <a href="#calendar" data-nav="calendar" data-i18n="navCalendar">Күнтізбе</a>
+    <a href="#stats" data-nav="stats" data-i18n="navStats">Статистика</a>
     <a href="#how" data-nav="how" data-i18n="navHow">Қалай таңдаймыз</a>
     <a href="#why" data-nav="why" data-i18n="navWhy">Неге жылдам</a>
     <a href="#help" data-nav="help" data-i18n="navHelp">Көмек</a>
@@ -62,6 +64,8 @@
     <nav class="nav-desktop" aria-label="Menu">
       <a href="#today" data-nav="today" data-i18n="navToday">Бүгін</a>
       <a href="#day" data-nav="day" data-i18n="navDay">Менің күнім</a>
+      <a href="#calendar" data-nav="calendar" data-i18n="navCalendar">Күнтізбе</a>
+      <a href="#stats" data-nav="stats" data-i18n="navStats">Статистика</a>
       <a href="#how" data-nav="how" data-i18n="navHow">Қалай таңдаймыз</a>
       <a href="#why" data-nav="why" data-i18n="navWhy">Неге жылдам</a>
       <a href="#help" data-nav="help" data-i18n="navHelp">Көмек</a>
@@ -238,6 +242,98 @@
         <div class="glass-card chart-card">
           <p class="muted" data-i18n="growth">Іс саны өскенде уақыт қалай өседі</p>
           <div id="growthChart" class="growth-chart"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="stats" class="page" data-page="stats">
+      <div class="page-inner">
+        <h1 class="page-title" data-i18n="statsTitle">Статистика</h1>
+        <p class="page-lead" data-i18n="statsLead">Күніңіздің ырғағы, тиімділік және жүктеме — бір көріністе.</p>
+
+        <div class="stats-kpi">
+          <div class="glass-card kpi-card">
+            <div class="ring" id="ringEfficiency" style="--p:0">
+              <strong id="kpiEfficiency">0%</strong>
+            </div>
+            <span data-i18n="kpiEfficiency">Тиімділік</span>
+          </div>
+          <div class="glass-card kpi-card">
+            <strong class="kpi-num" id="kpiTotal">0</strong>
+            <span data-i18n="kpiTotal">Барлық іс</span>
+          </div>
+          <div class="glass-card kpi-card">
+            <strong class="kpi-num" id="kpiFit">0</strong>
+            <span data-i18n="kpiFit">Сыйған</span>
+          </div>
+          <div class="glass-card kpi-card">
+            <strong class="kpi-num warn" id="kpiConflict">0</strong>
+            <span data-i18n="kpiConflict">Қақтығыс</span>
+          </div>
+        </div>
+
+        <div class="stats-grid">
+          <div class="glass-card chart-panel">
+            <h2 data-i18n="chartBalance">Күн балансы</h2>
+            <p class="chart-sub" data-i18n="chartBalanceSub">Сыйған және қақтығысқан істер</p>
+            <div class="donut-wrap">
+              <svg class="donut" viewBox="0 0 120 120" aria-hidden="true">
+                <circle class="donut-track" cx="60" cy="60" r="46"></circle>
+                <circle class="donut-seg fit" id="donutFit" cx="60" cy="60" r="46"></circle>
+                <circle class="donut-seg conflict" id="donutConflict" cx="60" cy="60" r="46"></circle>
+              </svg>
+              <div class="donut-center">
+                <b id="donutCenter">0</b>
+                <small data-i18n="hoursBusy">сағат</small>
+              </div>
+            </div>
+            <div class="chart-legend-row">
+              <span><i class="dot fit"></i> <span data-i18n="kpiFit">Сыйған</span></span>
+              <span><i class="dot conflict"></i> <span data-i18n="kpiConflict">Қақтығыс</span></span>
+            </div>
+          </div>
+
+          <div class="glass-card chart-panel">
+            <h2 data-i18n="chartHours">Күн бөліктері</h2>
+            <p class="chart-sub" data-i18n="chartHoursSub">Таң / күн / кеш бойынша жүктеме</p>
+            <div class="hbar-chart" id="hourBars"></div>
+          </div>
+
+          <div class="glass-card chart-panel wide">
+            <h2 data-i18n="chartWeek">Соңғы 7 күн</h2>
+            <p class="chart-sub" data-i18n="chartWeekSub">Күн сайынғы істер саны</p>
+            <div class="vbar-chart" id="weekBars"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section id="calendar" class="page" data-page="calendar">
+      <div class="page-inner">
+        <h1 class="page-title" data-i18n="calTitle">Күнтізбе</h1>
+        <p class="page-lead" data-i18n="calLead">Айлық көрініс — күніңізді таңдап, жоспарды ашыңыз.</p>
+
+        <div class="cal-layout">
+          <div class="glass-card cal-card">
+            <div class="cal-head">
+              <button type="button" class="btn btn-glass btn-sm" id="calPrev" aria-label="Prev">‹</button>
+              <h2 id="calMonthLabel">—</h2>
+              <button type="button" class="btn btn-glass btn-sm" id="calNext" aria-label="Next">›</button>
+            </div>
+            <div class="cal-weekdays" id="calWeekdays"></div>
+            <div class="cal-grid" id="calGrid"></div>
+          </div>
+
+          <div class="glass-card cal-side">
+            <p class="date-line" id="calSelectedLabel">—</p>
+            <h2 data-i18n="calDayTasks">Күн істері</h2>
+            <ul class="day-list" id="calDayList"></ul>
+            <p id="calDayEmpty" class="empty-soft" data-i18n="calEmpty">Бұл күні іс жоқ.</p>
+            <div class="cal-actions">
+              <button type="button" class="btn full" id="calOpenDay" data-i18n="calOpenDay">Менің күніме ашу</button>
+              <button type="button" class="btn btn-glass full" id="calGoToday" data-i18n="calGoToday">Бүгінге оралу</button>
+            </div>
+          </div>
         </div>
       </div>
     </section>

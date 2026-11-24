@@ -1,5 +1,6 @@
 (function () {
   const KEY = "zhospar_tasks_v2";
+  const CAL_KEY = "zhospar_calendar_v1";
   const LANG_KEY = "zhospar_lang";
   const THEME_KEY = "zhospar_theme";
 
@@ -28,12 +29,16 @@
 
   let lang = localStorage.getItem(LANG_KEY) || "kk";
   let theme = localStorage.getItem(THEME_KEY) || "light";
-  let tasks = load();
   let animTimer = null;
   let animSteps = [];
   let animIndex = 0;
   let animPlaying = false;
   let idSeq = Date.now();
+  let calCursor = new Date();
+  let selectedCalDate = dateKey(new Date());
+  let calendarMap = loadCalendar();
+  let activeDate = selectedCalDate;
+  let tasks = (calendarMap[activeDate] || defaults).map((x) => ({ ...x }));
 
   const formMsg = document.getElementById("formMsg");
   const empty = document.getElementById("emptyState");
@@ -77,6 +82,8 @@
     solve();
     if (document.querySelector('.page[data-page="how"].is-active')) resetLab();
     if (document.querySelector('.page[data-page="why"].is-active')) drawGrowthChart(tasks.length || 6);
+    if (document.querySelector('.page[data-page="stats"].is-active')) renderStats();
+    if (document.querySelector('.page[data-page="calendar"].is-active')) renderCalendar();
   }
 
   function setLang(next) {
@@ -122,7 +129,15 @@
     });
   }
 
-  function load() {
+  function dateKey(d) {
+    const x = d instanceof Date ? d : new Date(d);
+    return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
+  }
+  function parseDateKey(key) {
+    const [y, m, d] = key.split("-").map(Number);
+    return new Date(y, m - 1, d);
+  }
+  function loadLegacyTasks() {
     try {
       const raw = localStorage.getItem(KEY);
       if (raw) {
@@ -132,8 +147,50 @@
     } catch (_) {}
     return defaults.map((x) => ({ ...x }));
   }
+  function seedWeek(map, today) {
+    const samples = [studentDay, workDay, defaults];
+    for (let i = 1; i <= 6; i++) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = dateKey(d);
+      if (map[key]) continue;
+      const src = samples[i % samples.length];
+      map[key] = src.slice(0, 2 + (i % 4)).map((x, idx) => ({
+        ...x,
+        id: `seed-${key}-${idx}`,
+      }));
+    }
+    if (!map[today]) map[today] = loadLegacyTasks();
+    return map;
+  }
+  function loadCalendar() {
+    try {
+      const raw = localStorage.getItem(CAL_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) return parsed;
+      }
+    } catch (_) {}
+    const today = dateKey(new Date());
+    const map = seedWeek({}, today);
+    localStorage.setItem(CAL_KEY, JSON.stringify(map));
+    return map;
+  }
   function save() {
-    localStorage.setItem(KEY, JSON.stringify(tasks));
+    calendarMap[activeDate] = tasks.map((x) => ({ ...x }));
+    localStorage.setItem(CAL_KEY, JSON.stringify(calendarMap));
+    if (activeDate === dateKey(new Date())) {
+      localStorage.setItem(KEY, JSON.stringify(tasks));
+    }
+  }
+  function setActiveDate(key) {
+    calendarMap[activeDate] = tasks.map((x) => ({ ...x }));
+    activeDate = key;
+    selectedCalDate = key;
+    tasks = (calendarMap[activeDate] || []).map((x) => ({ ...x }));
+    save();
+    renderList();
+    solve();
   }
 
   function timeToHours(value) {
@@ -496,6 +553,194 @@
     chart.appendChild(legend);
   }
 
+  function animateNumber(el, to, suffix, duration) {
+    if (!el) return;
+    const end = Number(to) || 0;
+    const start = 0;
+    const t0 = performance.now();
+    const ms = duration || 900;
+    function frame(now) {
+      const p = Math.min(1, (now - t0) / ms);
+      const eased = 1 - Math.pow(1 - p, 3);
+      const val = Math.round(start + (end - start) * eased);
+      el.textContent = suffix ? val + suffix : String(val);
+      if (p < 1) requestAnimationFrame(frame);
+    }
+    requestAnimationFrame(frame);
+  }
+
+  function collectStats() {
+    const keys = Object.keys(calendarMap);
+    let total = 0;
+    let fit = 0;
+    let conflict = 0;
+    let busyHours = 0;
+    const slots = { morning: 0, day: 0, evening: 0 };
+    keys.forEach((key) => {
+      const list = calendarMap[key] || [];
+      total += list.length;
+      const selected = schedule(list);
+      fit += selected.length;
+      conflict += countConflicts(list);
+      list.forEach((task) => {
+        const dur = Math.max(0, task.end - task.start);
+        busyHours += dur;
+        const mid = (task.start + task.end) / 2;
+        if (mid < 12) slots.morning += dur;
+        else if (mid < 17) slots.day += dur;
+        else slots.evening += dur;
+      });
+    });
+    const week = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const key = dateKey(d);
+      const list = calendarMap[key] || [];
+      week.push({
+        key,
+        label: d.toLocaleDateString(localeTag(), { weekday: "short" }),
+        count: list.length,
+        fit: schedule(list).length,
+      });
+    }
+    const efficiency = total ? Math.round((fit / total) * 100) : 0;
+    return { total, fit, conflict, busyHours, slots, week, efficiency };
+  }
+
+  function renderStats() {
+    const s = collectStats();
+    const ring = document.getElementById("ringEfficiency");
+    if (ring) {
+      ring.style.setProperty("--p", "0");
+      requestAnimationFrame(() => ring.style.setProperty("--p", String(s.efficiency)));
+    }
+    animateNumber(document.getElementById("kpiEfficiency"), s.efficiency, "%");
+    animateNumber(document.getElementById("kpiTotal"), s.total);
+    animateNumber(document.getElementById("kpiFit"), s.fit);
+    animateNumber(document.getElementById("kpiConflict"), s.conflict);
+    animateNumber(document.getElementById("donutCenter"), Math.round(s.busyHours * 10) / 10);
+
+    const circ = 2 * Math.PI * 46;
+    const fitPart = s.total ? s.fit / s.total : 0;
+    const conflictPart = s.total ? Math.min(s.conflict, s.total) / s.total : 0;
+    const fitLen = circ * fitPart;
+    const conflictLen = circ * conflictPart;
+    const donutFit = document.getElementById("donutFit");
+    const donutConflict = document.getElementById("donutConflict");
+    if (donutFit) {
+      donutFit.style.strokeDasharray = `${fitLen} ${circ}`;
+      donutFit.style.strokeDashoffset = "0";
+    }
+    if (donutConflict) {
+      donutConflict.style.strokeDasharray = `${conflictLen} ${circ}`;
+      donutConflict.style.strokeDashoffset = String(-fitLen);
+    }
+
+    const hourBars = document.getElementById("hourBars");
+    if (hourBars) {
+      const maxSlot = Math.max(s.slots.morning, s.slots.day, s.slots.evening, 0.5);
+      const rows = [
+        ["slotMorning", s.slots.morning, "m"],
+        ["slotDay", s.slots.day, "d"],
+        ["slotEvening", s.slots.evening, "e"],
+      ];
+      hourBars.innerHTML = rows
+        .map(([key, val, cls], i) => {
+          const pct = Math.round((val / maxSlot) * 100);
+          return `<div class="hbar-row" style="--delay:${i * 0.08}s">
+            <span>${escapeHtml(t(key))}</span>
+            <div class="hbar-track"><i class="${cls}" style="--w:${pct}%"></i></div>
+            <b>${val.toFixed(1)}h</b>
+          </div>`;
+        })
+        .join("");
+    }
+
+    const weekBars = document.getElementById("weekBars");
+    if (weekBars) {
+      const maxW = Math.max(...s.week.map((x) => x.count), 1);
+      weekBars.innerHTML = s.week
+        .map((day, i) => {
+          const h = Math.max(8, Math.round((day.count / maxW) * 100));
+          const isToday = day.key === dateKey(new Date());
+          return `<div class="vbar ${isToday ? "today" : ""}" style="--delay:${i * 0.06}s">
+            <div class="vbar-col"><i style="--h:${h}%"></i></div>
+            <span>${escapeHtml(day.label)}</span>
+            <b>${day.count}</b>
+          </div>`;
+        })
+        .join("");
+    }
+  }
+
+  function renderCalendar() {
+    const weekdays = document.getElementById("calWeekdays");
+    const grid = document.getElementById("calGrid");
+    const label = document.getElementById("calMonthLabel");
+    if (!grid || !weekdays || !label) return;
+
+    weekdays.innerHTML = [0, 1, 2, 3, 4, 5, 6]
+      .map((i) => `<span>${escapeHtml(t("wd" + i))}</span>`)
+      .join("");
+
+    const y = calCursor.getFullYear();
+    const m = calCursor.getMonth();
+    label.textContent = new Date(y, m, 1).toLocaleDateString(localeTag(), {
+      month: "long",
+      year: "numeric",
+    });
+
+    const first = new Date(y, m, 1);
+    let startPad = (first.getDay() + 6) % 7;
+    const daysInMonth = new Date(y, m + 1, 0).getDate();
+    const today = dateKey(new Date());
+    let html = "";
+    for (let i = 0; i < startPad; i++) html += `<button type="button" class="cal-day empty" disabled></button>`;
+    for (let d = 1; d <= daysInMonth; d++) {
+      const key = dateKey(new Date(y, m, d));
+      const list = calendarMap[key] || [];
+      const count = list.length;
+      const cls = [
+        "cal-day",
+        key === today ? "is-today" : "",
+        key === selectedCalDate ? "is-selected" : "",
+        count ? "has-tasks" : "",
+      ]
+        .filter(Boolean)
+        .join(" ");
+      html += `<button type="button" class="${cls}" data-date="${key}">
+        <span class="num">${d}</span>
+        ${count ? `<span class="dots">${"•".repeat(Math.min(count, 3))}</span>` : ""}
+      </button>`;
+    }
+    grid.innerHTML = html;
+
+    const selectedList = calendarMap[selectedCalDate] || [];
+    const selectedLabel = document.getElementById("calSelectedLabel");
+    if (selectedLabel) {
+      selectedLabel.textContent = parseDateKey(selectedCalDate).toLocaleDateString(localeTag(), {
+        weekday: "long",
+        day: "numeric",
+        month: "long",
+      });
+    }
+    const calDayList = document.getElementById("calDayList");
+    const calDayEmpty = document.getElementById("calDayEmpty");
+    if (calDayList) {
+      calDayList.innerHTML = "";
+      selectedList
+        .slice()
+        .sort((a, b) => a.start - b.start)
+        .forEach((task) => {
+          const li = document.createElement("li");
+          li.innerHTML = `<span>${escapeHtml(task.title)}</span><b>${hoursToLabel(task.start)}–${hoursToLabel(task.end)}</b>`;
+          calDayList.appendChild(li);
+        });
+    }
+    if (calDayEmpty) calDayEmpty.style.display = selectedList.length ? "none" : "block";
+  }
+
   function openMenu() {
     document.body.classList.add("menu-open");
     navEl.classList.add("open");
@@ -515,7 +760,7 @@
     else openMenu();
   }
 
-  const PAGES = ["today", "day", "how", "why", "help"];
+  const PAGES = ["today", "day", "calendar", "stats", "how", "why", "help"];
   function showPage(name) {
     const page = PAGES.includes(name) ? name : "today";
     document.querySelectorAll(".page").forEach((el) => {
@@ -529,6 +774,8 @@
     closeMenu();
     if (page === "why") drawGrowthChart(tasks.length || 6);
     if (page === "how") resetLab();
+    if (page === "stats") renderStats();
+    if (page === "calendar") renderCalendar();
   }
 
   document.getElementById("taskForm").addEventListener("submit", (e) => {
@@ -592,6 +839,32 @@
     e.preventDefault();
     showMsg(document.getElementById("contactMsg"), t("sent"), true);
     e.target.reset();
+  });
+
+  document.getElementById("calPrev").addEventListener("click", () => {
+    calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth() - 1, 1);
+    renderCalendar();
+  });
+  document.getElementById("calNext").addEventListener("click", () => {
+    calCursor = new Date(calCursor.getFullYear(), calCursor.getMonth() + 1, 1);
+    renderCalendar();
+  });
+  document.getElementById("calGrid").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-date]");
+    if (!btn) return;
+    selectedCalDate = btn.getAttribute("data-date");
+    renderCalendar();
+  });
+  document.getElementById("calOpenDay").addEventListener("click", () => {
+    setActiveDate(selectedCalDate);
+    showPage("day");
+  });
+  document.getElementById("calGoToday").addEventListener("click", () => {
+    const today = dateKey(new Date());
+    selectedCalDate = today;
+    calCursor = new Date();
+    setActiveDate(today);
+    renderCalendar();
   });
 
   menuToggle.addEventListener("click", toggleMenu);
