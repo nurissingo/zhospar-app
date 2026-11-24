@@ -113,6 +113,9 @@
       if (text) text.textContent = isDark ? t("themeLight") : t("themeDark");
       btn.setAttribute("aria-label", isDark ? t("themeLight") : t("themeDark"));
     });
+    [document.getElementById("refreshBtn"), document.getElementById("refreshBtnDrawer")].forEach((btn) => {
+      if (btn) btn.setAttribute("aria-label", t("refresh"));
+    });
   }
 
   function toggleTheme() {
@@ -888,128 +891,49 @@
     showPage(location.hash.replace("#", "") || "today");
   });
 
-  const ptr = document.getElementById("ptr");
-  const ptrText = ptr ? ptr.querySelector(".ptr-text") : null;
-  let ptrStartY = 0;
-  let ptrStartX = 0;
-  let ptrDelta = 0;
-  let ptrTracking = false;
-  let ptrRefreshing = false;
-  const PTR_MAX = 96;
-  const PTR_TRIGGER = 78;
-
-  function atPageTop() {
-    return (window.scrollY || document.documentElement.scrollTop || 0) <= 1;
-  }
-
-  function setPtrPull(delta) {
-    if (!ptr) return;
-    const p = Math.max(0, Math.min(delta, PTR_MAX));
-    ptrDelta = p;
-    ptr.style.setProperty("--ptr-h", p + "px");
-    ptr.style.setProperty("--ptr-p", String(p));
-    ptr.classList.toggle("visible", p > 10);
-    ptr.classList.toggle("pulling", p > 10 && !ptrRefreshing);
-    if (ptrText && !ptrRefreshing) {
-      ptrText.textContent = p >= PTR_TRIGGER ? t("releaseRefresh") : t("pullRefresh");
-    }
-  }
-
+  let refreshing = false;
   async function hardRefresh() {
-    if (ptrRefreshing) return;
-    ptrRefreshing = true;
-    if (ptr) {
-      ptr.classList.add("visible", "refreshing");
-      ptr.classList.remove("pulling");
-      ptr.style.setProperty("--ptr-h", "72px");
-    }
-    if (ptrText) ptrText.textContent = t("refreshing");
+    if (refreshing) return;
+    refreshing = true;
+    const btn = document.getElementById("refreshBtn");
+    const btnDrawer = document.getElementById("refreshBtnDrawer");
+    [btn, btnDrawer].forEach((el) => {
+      if (el) el.classList.add("is-spinning");
+    });
     try {
-      if (navigator.serviceWorker && navigator.serviceWorker.controller) {
-        navigator.serviceWorker.controller.postMessage({ type: "CLEAR_CACHE" });
-      }
       if ("caches" in window) {
         const keys = await caches.keys();
         await Promise.all(keys.map((k) => caches.delete(k)));
       }
       if ("serviceWorker" in navigator) {
         const regs = await navigator.serviceWorker.getRegistrations();
-        await Promise.all(regs.map((r) => r.unregister()));
+        await Promise.all(
+          regs.map(async (reg) => {
+            try {
+              await reg.update();
+            } catch (_) {}
+            try {
+              await reg.unregister();
+            } catch (_) {}
+          })
+        );
       }
     } catch (_) {}
-    const url = new URL(location.href);
-    url.searchParams.set("_r", String(Date.now()));
-    location.replace(url.pathname + url.search + url.hash);
+    const hash = location.hash || "#today";
+    const base = location.href.split("#")[0].split("?")[0];
+    location.replace(base + "?v=" + Date.now() + hash);
   }
 
-  // Fully passive — never blocks scroll (no preventDefault).
-  document.addEventListener(
-    "touchstart",
-    (e) => {
-      if (ptrRefreshing || document.body.classList.contains("menu-open")) return;
-      if (!atPageTop() || e.touches.length !== 1) {
-        ptrTracking = false;
-        return;
-      }
-      ptrTracking = true;
-      ptrStartY = e.touches[0].clientY;
-      ptrStartX = e.touches[0].clientX;
-      ptrDelta = 0;
-    },
-    { passive: true }
-  );
-
-  document.addEventListener(
-    "touchmove",
-    (e) => {
-      if (!ptrTracking || ptrRefreshing) return;
-      if (!atPageTop()) {
-        ptrTracking = false;
-        setPtrPull(0);
-        return;
-      }
-      const touch = e.touches[0];
-      const dy = touch.clientY - ptrStartY;
-      const dx = Math.abs(touch.clientX - ptrStartX);
-      if (dx > 24 && dx > Math.abs(dy)) {
-        ptrTracking = false;
-        setPtrPull(0);
-        return;
-      }
-      if (dy <= 0) {
-        setPtrPull(0);
-        return;
-      }
-      setPtrPull(Math.min(PTR_MAX, dy * 0.45));
-    },
-    { passive: true }
-  );
-
-  document.addEventListener(
-    "touchend",
-    () => {
-      if (!ptrTracking) return;
-      ptrTracking = false;
-      if (ptrDelta >= PTR_TRIGGER && atPageTop()) hardRefresh();
-      else setPtrPull(0);
-    },
-    { passive: true }
-  );
-
-  document.addEventListener(
-    "touchcancel",
-    () => {
-      ptrTracking = false;
-      if (!ptrRefreshing) setPtrPull(0);
-    },
-    { passive: true }
-  );
+  const refreshBtn = document.getElementById("refreshBtn");
+  const refreshBtnDrawer = document.getElementById("refreshBtnDrawer");
+  if (refreshBtn) refreshBtn.addEventListener("click", hardRefresh);
+  if (refreshBtnDrawer) refreshBtnDrawer.addEventListener("click", hardRefresh);
 
   if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("./sw.js").catch(() => {});
   }
 
-  if (location.search.indexOf("_r=") !== -1) {
+  if (/\b[v_]=/.test(location.search) || location.search.indexOf("_r=") !== -1) {
     history.replaceState(null, "", location.pathname + location.hash);
   }
 

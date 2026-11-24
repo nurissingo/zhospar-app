@@ -34,10 +34,6 @@
     <span class="bg-orb b"></span>
     <span class="bg-orb c"></span>
   </div>
-  <div id="ptr" class="ptr" aria-hidden="true">
-    <div class="ptr-spinner"></div>
-    <span class="ptr-text" data-i18n="refreshing">Жаңартылуда…</span>
-  </div>
   <div class="menu-overlay" id="menuOverlay" hidden></div>
 
   <nav id="mainNav" class="main-nav glass" aria-label="Menu">
@@ -60,6 +56,10 @@
       <button type="button" class="theme-btn" id="themeToggleDrawer" aria-label="Theme">
         <span class="theme-icon" aria-hidden="true">☾</span>
         <span class="theme-text" data-i18n="themeDark">Түнгі</span>
+      </button>
+      <button type="button" class="theme-btn" id="refreshBtnDrawer" aria-label="Refresh">
+        <span aria-hidden="true">↻</span>
+        <span data-i18n="refresh">Жаңарту</span>
       </button>
     </div>
   </nav>
@@ -86,6 +86,9 @@
       </select>
       <button type="button" class="theme-btn icon-only" id="themeToggle" aria-label="Theme">
         <span class="theme-icon" aria-hidden="true">☾</span>
+      </button>
+      <button type="button" class="theme-btn icon-only" id="refreshBtn" aria-label="Refresh" title="Refresh">
+        <span aria-hidden="true">↻</span>
       </button>
       <button type="button" class="menu-toggle" id="menuToggle" aria-label="Menu" aria-expanded="false">
         <span></span><span></span><span></span>
