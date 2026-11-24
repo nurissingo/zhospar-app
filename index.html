@@ -23,23 +23,32 @@
   <div class="bg-orb o3" aria-hidden="true"></div>
   <div class="menu-overlay" id="menuOverlay" hidden></div>
 
+  <!-- Мәзір header-дан тыс: blur ішінде fixed жұмыс істемейді -->
+  <nav id="mainNav" class="main-nav glass" aria-label="Негізгі мәзір">
+    <p class="nav-label">Мәзір</p>
+    <a href="#today" data-nav="today">Бүгін</a>
+    <a href="#day" data-nav="day">Менің күнім</a>
+    <a href="#how" data-nav="how">Қалай таңдаймыз</a>
+    <a href="#why" data-nav="why">Неге жылдам</a>
+    <a href="#help" data-nav="help">Көмек</a>
+    <button type="button" class="nav-close" id="menuClose">Жабу</button>
+  </nav>
+
   <header class="topbar glass">
     <a class="logo" href="#today" data-nav="today">
       <span class="mark">Z</span>
       <span class="name">Zhospar</span>
     </a>
-    <button type="button" class="menu-toggle glass" id="menuToggle" aria-label="Мәзір" aria-expanded="false">
-      <span></span><span></span><span></span>
-    </button>
-    <nav id="mainNav" class="main-nav glass">
-      <p class="nav-label">Мәзір</p>
+    <nav class="nav-desktop" aria-label="Мәзір">
       <a href="#today" data-nav="today">Бүгін</a>
       <a href="#day" data-nav="day">Менің күнім</a>
       <a href="#how" data-nav="how">Қалай таңдаймыз</a>
       <a href="#why" data-nav="why">Неге жылдам</a>
       <a href="#help" data-nav="help">Көмек</a>
-      <button type="button" class="nav-close" id="menuClose">Жабу</button>
     </nav>
+    <button type="button" class="menu-toggle glass" id="menuToggle" aria-label="Мәзір" aria-expanded="false">
+      <span></span><span></span><span></span>
+    </button>
   </header>
 
   <main>
