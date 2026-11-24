@@ -891,14 +891,15 @@
   const ptr = document.getElementById("ptr");
   const ptrText = ptr ? ptr.querySelector(".ptr-text") : null;
   let ptrStartY = 0;
+  let ptrStartX = 0;
   let ptrDelta = 0;
-  let ptrActive = false;
+  let ptrTracking = false;
   let ptrRefreshing = false;
   const PTR_MAX = 96;
-  const PTR_TRIGGER = 72;
+  const PTR_TRIGGER = 78;
 
   function atPageTop() {
-    return (window.scrollY || document.documentElement.scrollTop || 0) <= 2;
+    return (window.scrollY || document.documentElement.scrollTop || 0) <= 1;
   }
 
   function setPtrPull(delta) {
@@ -907,8 +908,8 @@
     ptrDelta = p;
     ptr.style.setProperty("--ptr-h", p + "px");
     ptr.style.setProperty("--ptr-p", String(p));
-    ptr.classList.toggle("visible", p > 8);
-    ptr.classList.toggle("pulling", p > 8 && !ptrRefreshing);
+    ptr.classList.toggle("visible", p > 10);
+    ptr.classList.toggle("pulling", p > 10 && !ptrRefreshing);
     if (ptrText && !ptrRefreshing) {
       ptrText.textContent = p >= PTR_TRIGGER ? t("releaseRefresh") : t("pullRefresh");
     }
@@ -938,16 +939,21 @@
     } catch (_) {}
     const url = new URL(location.href);
     url.searchParams.set("_r", String(Date.now()));
-    location.replace(url.toString());
+    location.replace(url.pathname + url.search + url.hash);
   }
 
+  // Fully passive — never blocks scroll (no preventDefault).
   document.addEventListener(
     "touchstart",
     (e) => {
       if (ptrRefreshing || document.body.classList.contains("menu-open")) return;
-      if (!atPageTop() || e.touches.length !== 1) return;
-      ptrActive = true;
+      if (!atPageTop() || e.touches.length !== 1) {
+        ptrTracking = false;
+        return;
+      }
+      ptrTracking = true;
       ptrStartY = e.touches[0].clientY;
+      ptrStartX = e.touches[0].clientX;
       ptrDelta = 0;
     },
     { passive: true }
@@ -956,30 +962,35 @@
   document.addEventListener(
     "touchmove",
     (e) => {
-      if (!ptrActive || ptrRefreshing) return;
+      if (!ptrTracking || ptrRefreshing) return;
       if (!atPageTop()) {
-        ptrActive = false;
+        ptrTracking = false;
         setPtrPull(0);
         return;
       }
-      const dy = e.touches[0].clientY - ptrStartY;
+      const touch = e.touches[0];
+      const dy = touch.clientY - ptrStartY;
+      const dx = Math.abs(touch.clientX - ptrStartX);
+      if (dx > 24 && dx > Math.abs(dy)) {
+        ptrTracking = false;
+        setPtrPull(0);
+        return;
+      }
       if (dy <= 0) {
         setPtrPull(0);
         return;
       }
-      const damped = Math.min(PTR_MAX, dy * 0.55);
-      setPtrPull(damped);
-      if (damped > 12 && e.cancelable) e.preventDefault();
+      setPtrPull(Math.min(PTR_MAX, dy * 0.45));
     },
-    { passive: false }
+    { passive: true }
   );
 
   document.addEventListener(
     "touchend",
     () => {
-      if (!ptrActive) return;
-      ptrActive = false;
-      if (ptrDelta >= PTR_TRIGGER) hardRefresh();
+      if (!ptrTracking) return;
+      ptrTracking = false;
+      if (ptrDelta >= PTR_TRIGGER && atPageTop()) hardRefresh();
       else setPtrPull(0);
     },
     { passive: true }
@@ -988,7 +999,7 @@
   document.addEventListener(
     "touchcancel",
     () => {
-      ptrActive = false;
+      ptrTracking = false;
       if (!ptrRefreshing) setPtrPull(0);
     },
     { passive: true }
