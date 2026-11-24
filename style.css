@@ -222,18 +222,30 @@ html.dark .theme-btn { background: rgba(255, 255, 255, 0.08); }
   font-size: 0.8rem; font-weight: 600; color: var(--muted);
 }
 
+.menu-toggle-spacer {
+  width: 40px; height: 40px; flex-shrink: 0;
+}
 .menu-toggle {
+  position: fixed;
+  top: max(0.65rem, env(safe-area-inset-top));
+  right: max(5vw, env(safe-area-inset-right));
+  z-index: 110;
   width: 40px; height: 40px; border-radius: 50%;
   display: grid; place-content: center; gap: 5px;
-  cursor: pointer; padding: 0; border: 0;
-  background: var(--chip-bg);
-  box-shadow: none;
-  position: relative;
-  z-index: 100;
+  cursor: pointer; padding: 0;
+  border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: saturate(180%) blur(16px);
+  -webkit-backdrop-filter: saturate(180%) blur(16px);
+  box-shadow: var(--shadow-soft), var(--glass-highlight);
+}
+html.dark .menu-toggle {
+  background: rgba(28, 36, 56, 0.7);
 }
 .menu-toggle span {
   display: block; width: 15px; height: 1.5px; border-radius: 2px;
   background: var(--ink); transition: .2s ease;
+  transform-origin: center;
 }
 body.menu-open .menu-toggle span:nth-child(1) { transform: translateY(6.5px) rotate(45deg); }
 body.menu-open .menu-toggle span:nth-child(2) { opacity: 0; }
@@ -287,7 +299,7 @@ body.menu-open .menu-toggle span:nth-child(3) { transform: translateY(-6.5px) ro
   color: var(--blue);
 }
 @media (min-width: 981px) {
-  .menu-toggle { display: none; }
+  .menu-toggle, .menu-toggle-spacer { display: none; }
   .nav-desktop { display: flex; }
   .main-nav, .menu-overlay { display: none !important; }
 }
