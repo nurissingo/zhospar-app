@@ -125,15 +125,29 @@
   }
 
   function localeTag() {
-    return lang === "ru" ? "ru-RU" : lang === "en" ? "en-US" : "kk-KZ";
+    return lang === "ru" ? "ru-RU" : lang === "en" ? "en-US" : "ru-RU";
+  }
+
+  const MONTHS_KK = [
+    "қаңтар", "ақпан", "наурыз", "сәуір", "мамыр", "маусым",
+    "шілде", "тамыз", "қыркүйек", "қазан", "қараша", "желтоқсан",
+  ];
+  const WEEKDAYS_KK = ["жексенбі", "дүйсенбі", "сейсенбі", "сәрсенбі", "бейсенбі", "жұма", "сенбі"];
+
+  function formatLongDate(d) {
+    if (lang === "kk") {
+      return `${d.getDate()} ${MONTHS_KK[d.getMonth()]}, ${WEEKDAYS_KK[d.getDay()]}`;
+    }
+    return d.toLocaleDateString(localeTag(), { weekday: "long", day: "numeric", month: "long" });
+  }
+
+  function formatMonthYear(d) {
+    if (lang === "kk") return `${MONTHS_KK[d.getMonth()]} ${d.getFullYear()}`;
+    return d.toLocaleDateString(localeTag(), { month: "long", year: "numeric" });
   }
 
   function updateDateLine() {
-    document.getElementById("todayDate").textContent = new Date().toLocaleDateString(localeTag(), {
-      weekday: "long",
-      day: "numeric",
-      month: "long",
-    });
+    document.getElementById("todayDate").textContent = formatLongDate(new Date());
   }
 
   function dateKey(d) {
@@ -693,10 +707,7 @@
 
     const y = calCursor.getFullYear();
     const m = calCursor.getMonth();
-    label.textContent = new Date(y, m, 1).toLocaleDateString(localeTag(), {
-      month: "long",
-      year: "numeric",
-    });
+    label.textContent = formatMonthYear(new Date(y, m, 1));
 
     const first = new Date(y, m, 1);
     let startPad = (first.getDay() + 6) % 7;
@@ -726,11 +737,7 @@
     const selectedList = calendarMap[selectedCalDate] || [];
     const selectedLabel = document.getElementById("calSelectedLabel");
     if (selectedLabel) {
-      selectedLabel.textContent = parseDateKey(selectedCalDate).toLocaleDateString(localeTag(), {
-        weekday: "long",
-        day: "numeric",
-        month: "long",
-      });
+      selectedLabel.textContent = formatLongDate(parseDateKey(selectedCalDate));
     }
     const calDayList = document.getElementById("calDayList");
     const calDayEmpty = document.getElementById("calDayEmpty");
